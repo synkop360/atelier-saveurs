@@ -1,6 +1,6 @@
 # Optimisation des combinaisons culinaires — conception
 
-Statut : proposition à valider. Deux modes et défaut « par paires » approuvés.
+Statut : conception validée par l’utilisateur le 7 novembre 2026.
 
 ## Intention et périmètre
 
