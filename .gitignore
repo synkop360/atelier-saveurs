@@ -1,0 +1,28 @@
+# Operating systems and editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+*.zip
+
+# Node / future build tooling
+node_modules/
+dist/
+build/
+coverage/
+.cache/
+.vite/
+.env
+.env.*
+!.env.example
+
+# Local data exports and private notes
+backups/
+exports/
+*.local.json
