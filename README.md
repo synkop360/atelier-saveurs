@@ -3,7 +3,7 @@
 
 Carnet culinaire généraliste, utilisable sur mobile et ordinateur, pour documenter les recettes et améliorer les préparations au fil d'essais comparables.
 
-**Version :** 0.2.1 — ingrédients visibles dans les essais et conversion des listes existantes. Le projet « Noël 2026 » et sept fiches d'essais sont inclus.
+**Version :** 0.3 — plans de test, préparations partagées et dégustations comparées. Le projet « Noël 2026 » et sept fiches d'essais sont inclus.
 
 ## Fonctionnalités
 
@@ -124,3 +124,46 @@ chargement sans votre action.
 Les ingrédients sont visibles dans les nouveaux essais et dans les archives même
 si la fiche utilise encore une liste libre. Une archive montre sa propre liste,
 sans la remplacer par la version actuelle de la recette.
+
+
+## Plans de test culinaires
+
+Dans **Plans de test**, créer un plan libre ou **Créer le plan dessert**. Un plan
+conserve ses recettes de référence, ses variantes, les lots à préparer et les
+assemblages à déguster. Les notes de chaque préparation restent distinctes des
+notes du dessert complet. Un même lot utilisé dans plusieurs dégustations correspond
+à un seul essai du carnet.
+
+Le modèle dessert propose chocolat 75/72 %, griottes sucrées à 10/15 % du poids des
+fruits et présence/absence de tuile : cinq préparations, quatre dégustations, sur
+huit combinaisons possibles. Il ne s’agit pas encore d’un optimiseur général.
+
+Avant création, choisir les sources, examiner les deux nouvelles fiches élémentaires
+et leurs procédures, puis télécharger la sauvegarde JSON proposée. La fiche composée
+originale reste intacte. Le découpage automatique de la procédure griottes/tuile est
+limité à la procédure connue du modèle ; une procédure personnelle utilise un plan
+libre. La formule exacte de la tuile n’existant pas dans les données de départ,
+son essai reste bloqué tant que ses ingrédients ne sont pas complétés dans la
+variante ou dans une référence explicitement actualisée.
+
+- **Préparer un lot** crée sa prévision ; **Démarrer cette préparation** ouvre
+  l’essai. Annuler ne crée rien ; enregistrer lie le lot et l’essai en une écriture.
+- Adapter la quantité du lot ou de l’essai sans modifier les recettes sources.
+  La quantité réellement enregistrée reste celle de la préparation réalisée.
+- **Composition et évaluation** permet de sélectionner les lots, enregistrer les
+  conditions et noter l’assemblage. Une dégustation réalisée exige les essais de
+  ses préparations. Une note vide reste « Non évalué ».
+- **Comparer** affiche les critères et observations sans moyenne imposée. Le tableau
+  peut défiler horizontalement. Amertume et acidité sont notées selon l’équilibre
+  souhaité, pas l’intensité brute.
+- Un nouveau lot de variante repart des paramètres de cette variante ; les
+  ajustements manuels d’un essai précédent ne sont pas recopiés implicitement.
+- Une nouvelle dégustation similaire réutilise ses lots sélectionnés ; choisir de
+  nouveaux lots pour une confirmation indépendante.
+- Les éléments utilisés sont protégés. Un essai lié ne peut pas être supprimé.
+  Dupliquer un plan crée de nouveaux identifiants et retire résultats/liens d’essais.
+  L’archivage conserve le plan en consultation.
+
+Les plans sont inclus dans le JSON global et le Markdown. Chaque plan peut aussi
+être exporté seul en Markdown. Les anciens fichiers restent importables ; aucun
+plan n’est ajouté au chargement des données existantes.

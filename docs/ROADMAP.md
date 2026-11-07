@@ -1,10 +1,10 @@
 # Pistes d’évolution d’Atelier Saveurs
 
-Ces pistes sont une réflexion produit ; elles ne sont pas présentées comme déjà
-implémentées. La version actuelle prépare les quantités, unités et instantanés
+La gestion manuelle des plans et compositions est implémentée en version 0.3.
+Les optimisations, coûts et améliorations ci-dessous restent des pistes futures. La version actuelle prépare les quantités, unités et instantanés
 nécessaires, sans introduire de synchronisation ni catalogue global obligatoire.
 
-## 1. Plans de test culinaires
+## 1. Plans de test culinaires — socle disponible
 
 Un plan regroupe des essais d’une ou plusieurs recettes autour d’un objectif :
 par exemple choisir une sauce et une cuisson pour un plat. Il précise hypothèses,
@@ -64,3 +64,12 @@ panel et effet reproductible ; éviter une moyenne trompeuse avec peu de dégust
 Plans et composition de plats → couverture explicable des combinaisons → coûts →
 organisation de session, en intégrant comparaison et répétitions progressivement.
 Chaque étape doit conserver les sauvegardes, les instantanés et l’usage local.
+
+
+## État de la première étape
+
+Disponible : plans libres, composants et variantes figés, préparations partagées,
+dégustations indépendantes, modèle dessert éditable et comparaison par critère.
+Le modèle à quatre lignes est un exemple de matrice, pas un solveur général.
+La prochaine étape reste la génération explicable de combinaisons et leur
+couverture, suivie du chiffrage des ingrédients et des plans.
