@@ -226,3 +226,12 @@ pour les univers à un ou deux composants). Tests de régression ajoutés.
 Cas limite Chromium : deux composants de 64 variantes (4 096 combinaisons),
 aperçu obtenu en 395 ms dans l’environnement de test, annulation vérifiée et base
 strictement inchangée. Cette mesure ne constitue pas une garantie sur tout appareil.
+
+
+Publication 0.4 confirmée : PR n°5 intégrée dans `b6740a9`, déploiement Pages réussi.
+Les quatre assets publiés répondent HTTP 200 et leurs octets correspondent aux
+fichiers livrés. Le parcours complet de l’optimiseur a été rejoué sur l’URL publique :
+complétion à 8, réduction à 4, sauvegarde, résultats et quantités conservés, conflits,
+choix explicite des lots, aperçu périmé refusé, retour aux réglages conservé,
+JSON/Markdown, affichages mobiles, rechargement et hors ligne. Aucun échec d’asset
+ni erreur JavaScript observé. La suite sur `main` compte 78 tests réussis.

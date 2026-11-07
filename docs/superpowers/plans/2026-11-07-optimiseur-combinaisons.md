@@ -52,7 +52,7 @@ Interfaces : générateur `solveOptimization`, wrapper de test `optimizePlan`,
 
 - [x] Tests Node, oracle, anciens parcours et mise à jour PWA sans migration.
 - [x] Revue indépendante et correction des points importants avec régressions.
-- [ ] Documentation et bilan, PR, intégration, Pages et parcours public vérifié.
+- [x] Documentation et bilan, PR, intégration, Pages et parcours public vérifié.
 
 ## Journal
 
@@ -70,3 +70,6 @@ Interfaces : générateur `solveOptimization`, wrapper de test `optimizePlan`,
 Revue indépendante : trois points reproduits puis corrigés (identifiants de
 duplication par catégorie, conservation des réglages de l’aperçu et chemin direct
 pour les univers à un ou deux composants). Tests de régression ajoutés.
+
+- Livraison : PR n°5, merge `b6740a9`, Pages réussi ; quatre assets identiques
+  et parcours public complet de l’optimiseur vérifié avec succès.
