@@ -189,3 +189,40 @@ réponse d’asset en erreur n’a été observée. La suite intégrée compte 5
 - Export Markdown avec quantité effective et marqueur manuel, JSON identique après
   aller-retour, disposition 360/390/844/1280, console sans erreur et hors ligne.
 - Régressions plans, quantités et MVP rejouées. Android physique non testé.
+
+
+## Version 0.4 — optimisation des combinaisons
+
+- 78 tests Node réussis : univers réalisables, couverture prévue/réalisée,
+  absences et lignes partielles, exclusions, choix des lots et limites de taille.
+  Oracle exhaustif indépendant sur de petits univers ; minimum dessert de 4 et
+  minimum de 5 avec exclusion vérifiés. Un budget interrompu ne produit pas de
+  fausse preuve. Aucun candidat ne produit pas une fausse couverture de 100 %.
+- Chromium local : dessert complété à 8 lignes en mode exhaustif, puis réagencé
+  à 4 lignes couvrant 12 paires. Sauvegarde téléchargée identique à la base avant
+  remplacement ; lots, rendements et ajustements inchangés.
+- Aperçu et calcul annulé sans écriture ; deux essais réels et une évaluation
+  conservés ; plusieurs lots imposant un choix explicite ; exclusion contradictoire
+  avec un résultat signalée sans modifier ce résultat. Aperçu périmé refusé.
+- Exports Markdown avec couverture courante, aller-retour JSON identique,
+  persistance et mode hors ligne vérifiés. Aucun échec d’asset ni erreur JavaScript.
+- Configuration contrôlée à 360/390/844/1280 px sans débordement horizontal ;
+  captures mobile et bureau inspectées. Android physique et audio non testés.
+- Mise à jour contrôlée du SW v7 vers v8, rafraîchissement réseau puis hors ligne :
+  données locales inchangées et cache d’une autre application préservé.
+
+La couverture porte sur les variantes choisies, pas sur toutes les quantités
+possibles ni sur toutes les interactions à trois éléments. Le minimum éventuel
+porte sur les nouvelles dégustations sous les contraintes et lignes conservées.
+Les coûts, équipements et horaires ne sont pas optimisés dans cette version.
+
+Les parcours MVP, quantités, conversion, plans et édition des lots ont été rejoués
+avec succès sur cette version locale.
+
+Revue indépendante : trois points reproduits puis corrigés (identifiants de
+duplication par catégorie, conservation des réglages de l’aperçu et chemin direct
+pour les univers à un ou deux composants). Tests de régression ajoutés.
+
+Cas limite Chromium : deux composants de 64 variantes (4 096 combinaisons),
+aperçu obtenu en 395 ms dans l’environnement de test, annulation vérifiée et base
+strictement inchangée. Cette mesure ne constitue pas une garantie sur tout appareil.

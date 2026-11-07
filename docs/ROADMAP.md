@@ -1,7 +1,7 @@
 # Pistes d’évolution d’Atelier Saveurs
 
 La gestion manuelle des plans et compositions est implémentée en version 0.3.
-Les optimisations, coûts et améliorations ci-dessous restent des pistes futures. La version actuelle prépare les quantités, unités et instantanés
+La couverture par paires et complète, avec exclusions et réutilisation explicite des lots, est disponible en version 0.4. Les coûts et améliorations ci-dessous restent des pistes futures. La version actuelle prépare les quantités, unités et instantanés
 nécessaires, sans introduire de synchronisation ni catalogue global obligatoire.
 
 ## 1. Plans de test culinaires — socle disponible
@@ -23,10 +23,11 @@ Avec trois éléments offrant deux variantes chacun, une recherche exhaustive fa
 toutes les paires avec 4 assemblages ; ils ne prouvent pas l’absence d’une
 interaction spécifique aux trois éléments.
 
-Le moteur devrait afficher la couverture et ses limites, respecter les assemblages
-interdits, les équipements disponibles et le budget, et réutiliser les préparations
-communes. Commencer par une heuristique explicable ; ne pas annoncer un minimum
-global ni le « meilleur plat » sans preuve. Les interactions suspectées nécessitent
+Le moteur affiche désormais la couverture et ses limites, respecte les assemblages
+interdits et réutilise explicitement les lots. Il combine une heuristique et une
+recherche exacte bornée ; le minimum est annoncé seulement lorsqu’il est prouvé
+sous les contraintes courantes. Les équipements disponibles, les coûts et le budget
+restent à intégrer. Les interactions suspectées nécessitent
 des essais supplémentaires, et les résultats prometteurs une répétition.
 
 ## 3. Coûts des ingrédients, recettes et essais
