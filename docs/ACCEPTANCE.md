@@ -131,3 +131,35 @@ absence d’erreurs JS/assets et rechargement hors ligne avec les données conse
   et le bloc suivant ; pas de débordement horizontal. Captures inspectées hors Git.
 - Rechargement hors ligne et persistance vérifiés. Aucun test Android physique
   ou reconnaissance audio ajouté ; la portée reste Chromium/Playwright.
+
+
+## Version 0.3 — plans de test et dessert
+
+Vérifications locales : 50 tests Node réussis, Chromium 156/Playwright (plugin Browser
+absent), affichages 360/390/844/1280 px. Android physique et audio non testés.
+
+- Sources dessert choisies explicitement, aperçu des variantes et des deux nouvelles
+  procédures, sauvegarde téléchargée identique au JSON antérieur ; création atomique
+  de deux fiches élémentaires et d’un plan à cinq lots/quatre dégustations.
+- Original composé conservé. Procédures testées : chauffe/réduction pour griottes,
+  étalage/cuisson 170 °C pour tuile. Procédure personnalisée non interprétée
+  automatiquement ; message orientant vers le plan libre.
+- Tuile incomplète bloquée ; annulation d’un essai sans nouvel enregistrement.
+- Quatre premières préparations : vrai chocolat 72 % et sucre 22,5 g dans leurs
+  instantanés ; tuile complétée explicitement puis enregistrée. Cinq essais au total.
+- Quatre dégustations réalisées en réutilisant ces lots : observations et notes
+  indépendantes ; critères non renseignés affichés « Non évalué » ; verdicts français.
+- Suppression d’un essai lié bloquée ; structures réalisées protégées ; duplication
+  du plan remettant résultats et liens à zéro. Archivage bloquant de nouveaux essais.
+- Plan libre : création, recette choisie, variante, lot et assemblage manuels.
+- Conclusion, export Markdown global et JSON complet, réimport et rechargement
+  vérifiés ; provenance du plan conservée dans les comptes rendus d’essai.
+- Quota : test de non-régression garantissant absence d’essai ou de lien partiel.
+- Ensemble des parcours MVP, quantités et conversions précédentes rejoué avec succès.
+- Mise à jour contrôlée du SW v5→v6 et rechargement hors ligne : données précédentes
+  intactes, aucune création automatique de plan, caches étrangers conservés.
+
+Revue indépendante : une erreur de découpage des étapes de cuisson a été repérée,
+reproduite par un test en échec et corrigée. Les autres contrôles de la revue ne
+signalaient pas d’anomalie importante. Aucun optimiseur général ni coût n’est encore
+implémenté ; la matrice dessert est un modèle éditable.

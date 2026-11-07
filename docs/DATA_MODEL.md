@@ -98,3 +98,46 @@ restent en texte intégral. Les plages gardent leur borne basse chiffrée et leu
 fourchette de référence en note. Les lignes non chiffrées ne sont pas arbitrairement
 étiquetées « au goût » : elles sont affichées « Quantité à préciser », sauf indication
 explicite « au goût ».
+
+
+## Plans de test — extension optionnelle 0.3
+
+`testPlans` est facultatif au niveau racine. Son absence n’entraîne aucune écriture
+ni migration. Les plans utilisent les mêmes sauvegardes et transactions `save`.
+
+- Plan : id, projectId, name, objective, hypothesis, conditions, criteria, conclusion,
+  status (`active`/`archived`), createdAt, updatedAt, components, preparations,
+  tastings, sourceIds et template (`dessert` ou null).
+- Critère : id et nom. Les notes de dégustation associent chaque id à un nombre
+  fini entre 0 et 10 ou `null`. Un critère utilisé ne change pas de sens en silence.
+- Composant : id, nom, recipeId et `reference`, copie indépendante de la recette ;
+  `variants` contient id, nom, included, changes, ingredientEdits et targetYield.
+  Les adaptations référencent les ids de lignes et peuvent changer nom, quantité,
+  unité et note ; leur matérialisation produit la fiche effective de la variante.
+- Préparation : id, nom, componentId, variantId, targetYield et trialId (null avant
+  réalisation). Une variante absente ne crée pas de préparation. Un lot n’est lié
+  qu’à un essai et le même essai ne représente pas plusieurs lots distincts.
+- Dégustation : id, nom, selections (componentId, variantId, preparationId ou null
+  pour absence), status (`planned`/`completed`/`skipped`), date, observations,
+  scores et verdict. Un seul choix par composant. Plusieurs dégustations peuvent
+  pointer sur le même lot sans dupliquer son essai.
+- Essai : extension optionnelle `planContext` identifiant plan, préparation,
+  composant, variante et libellés de provenance. Le snapshot est la formulation
+  effective figée, distincte de la référence courante de la bibliothèque.
+
+L’enregistrement d’un essai copie db, ajoute l’essai et lie la préparation dans
+la même écriture. Le rendement du lot est synchronisé avec celui réellement
+sauvegardé dans l’essai. Une annulation ne change aucun objet enregistré.
+
+L’import valide tous les liens, les snapshots, les états, les nombres et les notes.
+La suppression d’un essai référencé est bloquée, y compris si le plan est archivé.
+Les structures utilisées sont protégées ; nouvelles variantes/lots et duplication
+permettent de poursuivre sans réécrire le passé. La duplication remappe les ids
+internes et supprime résultats, dates de dégustation et liens d’essai, sans modifier
+les références sources.
+
+Le modèle dessert crée deux fiches élémentaires nouvelles ; l’original composé
+reste intact. Les durées de la fiche composée ne sont pas inventées pour ses
+éléments. Les procédures connues sont découpées explicitement : griottes = chauffe
+et réduction ; tuile = étalage et cuisson. Les procédures personnelles ne sont
+pas interprétées par un filtre de mots-clés : un plan libre conserve leur sens.
