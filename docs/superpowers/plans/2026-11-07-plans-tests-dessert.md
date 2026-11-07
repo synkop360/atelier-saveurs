@@ -61,7 +61,7 @@ Fichiers : `index.html`, script Playwright temporaire hors Git.
 
 - [x] Incrémenter le cache PWA, vérifier hors ligne et actualisation sans réécriture.
 - [x] Faire une revue indépendante de l’ensemble et corriger les problèmes importants.
-- [ ] Mettre à jour README, modèle, roadmap et bilan exact ; créer une PR,
+- [x] Mettre à jour README, modèle, roadmap et bilan exact ; créer une PR,
   intégrer puis vérifier Pages HTTP/identité des assets et parcours public.
 
 ## Journal
@@ -79,3 +79,8 @@ Fichiers : `index.html`, script Playwright temporaire hors Git.
 - Choix : ingrédients qualitatifs possibles seulement avec indication explicite
   « au goût » ; aucune formule de tuile inventée ; quantités réelles synchronisées
   au lot lors de l’enregistrement de l’essai ; coûts/optimiseur général reportés.
+
+- Livraison : PR n°3 intégrée dans `5037438`, Pages réussi, quatre assets HTTP 200
+  identiques à l’arbre local. Parcours complet public réussi et suite intégrée 50/50.
+- Les coûts et l’optimisation générale restent les prochaines étapes de la roadmap ;
+  aucun résultat Android physique ou audio n’a été revendiqué.

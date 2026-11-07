@@ -163,3 +163,12 @@ Revue indépendante : une erreur de découpage des étapes de cuisson a été re
 reproduite par un test en échec et corrigée. Les autres contrôles de la revue ne
 signalaient pas d’anomalie importante. Aucun optimiseur général ni coût n’est encore
 implémenté ; la matrice dessert est un modèle éditable.
+
+
+Publication 0.3 confirmée : PR n°3 intégrée dans `5037438`, déploiement Pages réussi.
+Les quatre assets applicatifs répondent HTTP 200 et sont identiques au commit livré.
+Le parcours complet Chromium a été rejoué avec succès sur l’URL publique : sources,
+aperçu, sauvegarde, création atomique, tuile bloquée puis complétée, cinq essais et
+quatre résultats, suppression liée bloquée, duplication sans résultats, plan libre,
+JSON/Markdown, rechargement, dispositions et mode hors ligne. Aucune erreur JS ou
+réponse d’asset en erreur n’a été observée. La suite intégrée compte 50 tests réussis.
