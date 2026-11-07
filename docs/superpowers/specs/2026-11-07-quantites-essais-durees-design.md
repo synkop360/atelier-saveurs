@@ -1,6 +1,6 @@
 # Quantités, essais à échelle variable et durées — conception proposée
 
-Statut : à valider avant implémentation.
+Statut : validé par l’utilisateur le 7 novembre 2026.
 
 ## Intention et décisions utilisateur
 
