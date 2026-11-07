@@ -3,7 +3,7 @@
 
 Carnet culinaire généraliste, utilisable sur mobile et ordinateur, pour documenter les recettes et améliorer les préparations au fil d'essais comparables.
 
-**Version :** MVP 0.1 — prototype à tester. Le projet « Noël 2026 » et sept fiches d'essais sont inclus.
+**Version :** 0.2 — quantités paramétriques, essais réduits et temps estimés. Le projet « Noël 2026 » et sept fiches d'essais sont inclus.
 
 ## Fonctionnalités
 
@@ -83,3 +83,23 @@ revient au cache hors ligne. Incrémenter sa version de cache lors d’un change
 du shell ; cette version est indépendante de la clé localStorage des données.
 Aucune migration n’est effectuée. Une donnée illisible déclenche un mode protégé
 avec export brut ; voir la procédure de récupération dans les critères d’acceptation.
+
+
+## Quantités et temps estimés
+
+Dans l’éditeur de recette, activer les quantités paramétriques, renseigner le
+rendement de référence (par exemple 6 portions) et les ingrédients structurés.
+La liste libre d’origine reste conservée : elle n’est pas convertie automatiquement.
+Exporter une sauvegarde JSON avant de compléter des recettes existantes.
+
+Dans un nouvel essai, choisir le rendement cible : 2 portions recalculent les
+quantités à un tiers. Chaque quantité peut être ajustée manuellement ; cet ajustement
+reste fixe quand la cible change, jusqu’à « Revenir au calcul ». Les quantités et
+la référence utilisée restent archivées indépendamment des futures modifications.
+Les conversions sont limitées aux unités compatibles, sans supposer une densité.
+
+Les durées estimées de préparation, cuisson, repos et total sont facultatives.
+Elles ne sont pas multipliées par le coefficient de quantité ; le total peut tenir
+compte de tâches simultanées. Les essais ont leurs propres estimations.
+
+Perspectives : [plans de test, optimisation des combinaisons, coûts et améliorations](docs/ROADMAP.md).
