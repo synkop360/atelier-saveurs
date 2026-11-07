@@ -17,7 +17,7 @@ Carnet culinaire généraliste, utilisable sur mobile et ordinateur, pour docume
 
 ## Essayer l'application
 
-**GitHub Pages** (une fois la publication activée) : https://synkop360.github.io/atelier-saveurs/
+**GitHub Pages** (publication vérifiée le 7 novembre 2026) : https://synkop360.github.io/atelier-saveurs/
 
 Pour exécuter localement :
 
@@ -64,3 +64,22 @@ LICENSE               # Licence MIT
 ## Licence
 
 Distribué sous licence **MIT** — voir [LICENSE](LICENSE). Utilisation, modification et commercialisation autorisées sous réserve du maintien de l'avis de copyright et de licence. Les dépendances ou services tiers éventuellement ajoutés auront leurs propres conditions.
+
+
+## Vérifications et maintenance
+
+Résultats détaillés et limites : [docs/ACCEPTANCE.md](docs/ACCEPTANCE.md).
+Tests sans dépendance npm (Node.js 24) :
+
+```bash
+node --test tests/*.test.cjs
+```
+
+Dans un environnement restreint ne permettant pas la création de sous-processus,
+ajouter `--test-isolation=none` après `--test`.
+
+Le service worker utilise le réseau en priorité pour actualiser l’application et
+revient au cache hors ligne. Incrémenter sa version de cache lors d’un changement
+du shell ; cette version est indépendante de la clé localStorage des données.
+Aucune migration n’est effectuée. Une donnée illisible déclenche un mode protégé
+avec export brut ; voir la procédure de récupération dans les critères d’acceptation.
