@@ -75,3 +75,35 @@ ils ont été reproduits par des tests en échec, corrigés puis vérifiés.
   services tiers. Validation Android réelle et audio recommandée ensuite.
 - IndexedDB et migrations restent des pistes documentées dans `DATA_MODEL.md`,
   sans changement du schéma `schema: 1` ou de la clé localStorage existante.
+
+
+## Version 0.2 — quantités, essais réduits, durées et disposition
+
+Validation locale du 7 novembre 2026 : Chromium 156.0.8078.79 via Playwright
+(plugin Browser absent), desktop 1280×900 et largeurs 360, 390, 844 et 1280 px.
+Android physique et dictée audio restent non testés.
+
+| Vérification | Résultat |
+| --- | --- |
+| Suite Node | Réussi : 25 tests, zéro échec, dont limites numériques, compatibilité et protection du stockage. |
+| Anciennes données | Réussi : aucune réécriture au rechargement, import ancien JSON, texte original conservé. |
+| Recette structurée | Réussi : rendement de référence, ajout/retrait de lignes sans perdre les autres saisies ; erreurs près des champs. |
+| Essai réduit | Réussi : 6 portions et 300 g deviennent 2 portions et 100 g. |
+| Ajustements | Réussi : 110 g reste fixe au changement de cible ; retour au calcul = 150 g pour 3 portions. |
+| Valeurs incorrectes | Réussi : rendement zéro, unités de cible incompatibles et ajustement invalide bloquent l’écriture. |
+| Instantanés | Réussi : modifier ensuite la référence ne change ni les ingrédients ni les durées de l’essai archivé. |
+| Durées | Réussi : préparation/cuisson/repos/total, modification dans l’essai distincte de la référence, inconnue différente de zéro. |
+| Sauvegardes | Réussi : ancien import puis JSON enrichi, égalité des données après aller-retour ; Markdown avec quantités effectives, ajustements, durées et verdict français. |
+| Disposition | Réussi : contrôles dans les limites de l’écran, labels associés, navigation mobile entière et zones tactiles de 44 px. Captures inspectées. |
+| Régression MVP | Réussi : tous les parcours automatisés de la première publication rejoués. |
+| Cache et hors ligne | Réussi : mise à jour contrôlée SW v3→v4, données inchangées et caches étrangers conservés ; nouveau shell disponible hors ligne. |
+| Revue indépendante | Réussi : aucune anomalie importante restante sur le commit applicatif `86af88a`, suite 25/25 confirmée. |
+
+Deux régressions spécifiques ont des tests permanents : annuler une saisie manuelle
+invalide avec « Revenir au calcul » ; refuser une quantité numérique pour une ligne
+qualitative sans unité. Les scripts et captures navigateur restent hors Git.
+
+Les anciennes listes d’ingrédients ne sont pas transformées automatiquement.
+Pour bénéficier des quantités, ouvrir la recette, activer la saisie structurée,
+saisir son rendement et ses lignes puis enregistrer. Les recettes de Noël restent
+inchangées tant que l’utilisateur ne les modifie pas.
