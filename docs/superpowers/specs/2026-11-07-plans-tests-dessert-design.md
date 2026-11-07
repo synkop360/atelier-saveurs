@@ -1,6 +1,6 @@
 # Plans de test culinaires — première version et cas dessert
 
-Statut : proposition à valider. Cas et trois axes approuvés par l’utilisateur.
+Statut : conception validée par l’utilisateur le 7 novembre 2026.
 
 ## Objectif et approche
 
