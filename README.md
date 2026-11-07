@@ -3,7 +3,7 @@
 
 Carnet culinaire généraliste, utilisable sur mobile et ordinateur, pour documenter les recettes et améliorer les préparations au fil d'essais comparables.
 
-**Version :** 0.2 — quantités paramétriques, essais réduits et temps estimés. Le projet « Noël 2026 » et sept fiches d'essais sont inclus.
+**Version :** 0.2.1 — ingrédients visibles dans les essais et conversion des listes existantes. Le projet « Noël 2026 » et sept fiches d'essais sont inclus.
 
 ## Fonctionnalités
 
@@ -103,3 +103,24 @@ Elles ne sont pas multipliées par le coefficient de quantité ; le total peut t
 compte de tâches simultanées. Les essais ont leurs propres estimations.
 
 Perspectives : [plans de test, optimisation des combinaisons, coûts et améliorations](docs/ROADMAP.md).
+
+
+### Recettes déjà enregistrées et ingrédients des essais
+
+Les sept recettes de départ sont maintenant fournies avec des ingrédients
+paramétriques. Lorsqu’un rendement n’est pas connu, **1 lot** représente les quantités
+originales ; croquettes et endives utilisent les 6 pièces indiquées dans leurs étapes.
+Les fourchettes utilisent leur borne basse pour le calcul, avec une note explicite
+et la plage d’origine conservée. Les quantités inconnues restent à préciser.
+
+Pour vos recettes déjà enregistrées : sur l’accueil, choisir **Convertir les recettes
+existantes**, vérifier l’aperçu puis **Sauvegarder et convertir**. Une sauvegarde JSON
+est téléchargée avant l’application. Les textes, notes, identifiants, étapes et essais
+archivés sont conservés ; les recettes déjà paramétriques restent inchangées.
+Les listes personnalisées simples sont reconnues ; les lignes ambiguës restent
+entières et non chiffrées pour être complétées manuellement. Rien n’est converti au
+chargement sans votre action.
+
+Les ingrédients sont visibles dans les nouveaux essais et dans les archives même
+si la fiche utilise encore une liste libre. Une archive montre sa propre liste,
+sans la remplacer par la version actuelle de la recette.

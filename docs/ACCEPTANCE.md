@@ -116,3 +116,18 @@ du commit livré. Le parcours Chromium enrichi complet a ensuite réussi sur
 https://synkop360.github.io/atelier-saveurs/ : création structurée, ajustements,
 durées, instantanés, ancien/nouveau JSON, Markdown, dispositions aux quatre largeurs,
 absence d’erreurs JS/assets et rechargement hors ligne avec les données conservées.
+
+
+## Correctifs 0.2.1 — ingrédients et conversion
+
+- Tests Node : 33 réussis, dont visibilité des listes libres et archives,
+  formulations des sept fiches, absence de migration au chargement, non-mutation
+  de la proposition, sauvegarde avant écriture et idempotence.
+- Chromium local : liste libre visible dans le formulaire et l’archive ; sept fiches
+  initiales paramétriques ; demi-lot de sarrasin = 12,5 g de liaison ; aperçu et
+  annulation sans changement ; sauvegarde téléchargée identique au JSON antérieur ;
+  application conservant tous les champs précédents et les essais archivés.
+- Contrôle d’espacement à 390 et 1280 px : au moins 14 px entre la ligne titre/bouton
+  et le bloc suivant ; pas de débordement horizontal. Captures inspectées hors Git.
+- Rechargement hors ligne et persistance vérifiés. Aucun test Android physique
+  ou reconnaissance audio ajouté ; la portée reste Chromium/Playwright.
