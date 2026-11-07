@@ -172,3 +172,20 @@ aperçu, sauvegarde, création atomique, tuile bloquée puis complétée, cinq e
 quatre résultats, suppression liée bloquée, duplication sans résultats, plan libre,
 JSON/Markdown, rechargement, dispositions et mode hors ligne. Aucune erreur JS ou
 réponse d’asset en erreur n’a été observée. La suite intégrée compte 50 tests réussis.
+
+
+## Version 0.3.1 — édition directe des quantités d’un lot
+
+- 57 tests Node réussis : ajustements transférés dans l’essai, synchronisation des
+  quantités réelles, validation des clés et valeurs, export effectif, copie des
+  anciens essais et conversion d’un ajustement de 40 g en 0,04 kg.
+- Chromium local, écran du lot : namelaka à 0,5 lot = 37,5 g de chocolat et 27 g de
+  lait ; chocolat ajusté à 40 g, puis cible 0,25 lot = 40 g conservés et lait 13,5 g.
+  Retour au calcul = 18,75 g de chocolat ; saisie invalide réinitialisable.
+- Enregistrement/rechargement et annulation vérifiés ; rendement zéro, unité
+  incompatible et quantité négative refusés sans changer les données enregistrées.
+- L’essai reprend le lot (0,25 et ajustement 20 g), l’ajustement réellement enregistré
+  à 21 g se retrouve dans le lot. Nouveau lot réglé à 22 g sans modifier l’essai passé.
+- Export Markdown avec quantité effective et marqueur manuel, JSON identique après
+  aller-retour, disposition 360/390/844/1280, console sans erreur et hors ligne.
+- Régressions plans, quantités et MVP rejouées. Android physique non testé.

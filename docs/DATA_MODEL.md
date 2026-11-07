@@ -141,3 +141,25 @@ reste intact. Les durées de la fiche composée ne sont pas inventées pour ses
 éléments. Les procédures connues sont découpées explicitement : griottes = chauffe
 et réduction ; tuile = étalage et cuisson. Les procédures personnelles ne sont
 pas interprétées par un filtre de mots-clés : un plan libre conserve leur sens.
+
+
+### Ajustements individuels des lots (0.3.1)
+
+Une préparation peut ajouter `adjustments`, objet associant id de ligne à une
+quantité positive finie ou `null`. Son absence dans les anciens documents signifie
+aucun ajustement, sans migration. Les clés doivent exister dans la formulation
+effective de la variante. Les valeurs calculées restent dérivées ; seul le
+rendement cible et les ajustements sont persistés.
+
+L’essai démarre avec `batch.targetYield` et `batch.adjustments` issus du lot.
+L’enregistrement de l’essai synchronise ces deux valeurs vers sa préparation dans
+la même transaction. Les lots réalisés restent protégés. La copie d’un lot réalisé
+prend les valeurs de l’essai réel, même si l’ancien lot n’avait pas encore de champ
+`adjustments`, puis retire le lien d’essai pour obtenir un nouveau lot indépendant.
+
+Si une variante ou sa référence change les unités d’une ligne ajustée, la quantité
+manuelle est convertie entre unités compatibles avant sauvegarde. Une unité
+incompatible ou un ingrédient ajusté disparu bloque toute la transaction ; aucun
+changement partiel n’est enregistré. Les ajustements restent fixes lors du simple
+changement de rendement. Les exports de lots prévus utilisent les quantités
+effectives et signalent les ajustements manuels, comme les essais réalisés.
