@@ -190,6 +190,162 @@ function gatherBatch(resetId=null){
  trialDraft.batch=batch;dirty.forEach(el=>{el.dataset.dirty='false'});
 }
 function batchChange(target){clearFormErrors();gatherBatch();updateBatchDisplay()}
+// Culinary plans are an optional schema-1 extension; old documents are never migrated.
+const plansOf=data=>data.testPlans||[];
+const newCriterion=name=>({id:uid(),name});
+const planStateLabel=state=>({active:'En cours',archived:'Archivé',planned:'Prévu',completed:'Réalisé',skipped:'Non réalisé',pending:'À évaluer'}[state]||state);
+function createPlan({projectId,name='Nouveau plan de test',objective='',hypothesis='',conditions='',criteria=['Goût','Texture']}={}){
+ return {id:uid(),projectId,name,objective,hypothesis,conditions,criteria:criteria.map(newCriterion),conclusion:'',status:'active',createdAt:today(),updatedAt:today(),components:[],preparations:[],tastings:[],sourceIds:[],template:null};
+}
+function addPlanComponent(plan,recipe,name=recipe.name){
+ const component={id:uid(),name,recipeId:recipe.id,reference:cloneData(recipe),variants:[]};
+ component.variants.push(createVariant(component,'Référence'));plan.components.push(component);return component;
+}
+function createVariant(component,name='Variante',included=true){
+ return {id:uid(),name,included,changes:'',ingredientEdits:[],targetYield:included&&component.reference.formulation?cloneData(component.reference.formulation.yield):null};
+}
+function materializeVariant(component,variant){
+ if(!variant.included)throw Error('Une variante absente ne crée pas de préparation.');
+ const recipe=cloneData(component.reference);recipe.name=component.reference.name+' — '+variant.name;
+ for(const edit of variant.ingredientEdits){
+  const line=recipe.formulation?.ingredients.find(line=>line.id===edit.ingredientId);
+  if(!line)throw Error('Adaptation d’un ingrédient inconnu.');
+  for(const key of ['name','quantity','unit','note'])if(Object.hasOwn(edit,key))line[key]=edit[key];
+ }
+ if(recipe.formulation)recipe.ingredients=recipe.formulation.ingredients.map(line=>ingredientQuantity(line)+' — '+line.name+(line.note?' — '+line.note:'')).join('\n');
+ return recipe;
+}
+function addPreparation(plan,componentId,variantId){
+ const component=plan.components.find(c=>c.id===componentId),variant=component?.variants.find(v=>v.id===variantId);
+ if(!variant?.included)throw Error('Une variante absente ne crée pas de préparation.');
+ const preparation={id:uid(),name:component.name+' · '+variant.name,componentId,variantId,targetYield:cloneData(variant.targetYield),trialId:null};
+ plan.preparations.push(preparation);return preparation;
+}
+function addTasting(plan,name='Dégustation',selections=[]){
+ const tasting={id:uid(),name,selections:cloneData(selections),status:'planned',date:'',observations:'',scores:Object.fromEntries(plan.criteria.map(c=>[c.id,null])),verdict:'pending'};
+ plan.tastings.push(tasting);return tasting;
+}
+function assertComponentEditable(plan,componentId){
+ if(plan.status==='archived')throw Error('Dupliquez le plan archivé pour le modifier.');
+ if(plan.preparations.some(p=>p.componentId===componentId&&p.trialId)||plan.tastings.some(t=>t.status==='completed'&&t.selections.some(s=>s.componentId===componentId)))throw Error('Ce composant est déjà utilisé par un essai réalisé. Ajoutez un nouveau composant ou dupliquez le plan.');
+}
+function assertPreparationEditable(plan,preparation){
+ if(plan.status==='archived'||preparation.trialId||plan.tastings.some(t=>t.status==='completed'&&t.selections.some(s=>s.preparationId===preparation.id)))throw Error('Ce lot est déjà utilisé ou réalisé. Dupliquez la préparation pour un nouvel essai.');
+}
+function assertPreparationReady(recipe){
+ if(!recipe.formulation||recipe.formulation.ingredients.some(line=>line.quantity===null&&!/au goût/i.test(line.note)))throw Error('Préparation incomplète : complétez les ingrédients et quantités à préciser dans la variante ou actualisez sa référence.');
+}
+function makeTrialFromRecipe(recipe,version){
+ const trial={id:uid(),recipeId:recipe.id,version,date:today(),createdAt:new Date().toISOString(),change:'',measurements:'',observations:'',next:'',status:'to_improve',scores:{taste:5,texture:5,aroma:5,feasibility:5,menu:5},wineTested:false,checked:[],snapshot:{name:recipe.name,ingredients:recipe.ingredients,steps:[...recipe.steps],goal:recipe.goal}};
+ if(recipe.formulation){trial.snapshot.formulation=cloneData(recipe.formulation);trial.batch={targetYield:cloneData(recipe.formulation.yield),adjustments:{}}}
+ if(recipe.estimatedMinutes){trial.snapshot.estimatedMinutes=cloneData(recipe.estimatedMinutes);trial.estimatedMinutes=cloneData(recipe.estimatedMinutes)}
+ return trial;
+}
+function makePlanTrial(data,planId,preparationId){
+ const plan=plansOf(data).find(p=>p.id===planId),prep=plan?.preparations.find(p=>p.id===preparationId);
+ if(!plan||!prep)throw Error('Préparation introuvable.');assertPreparationEditable(plan,prep);
+ const component=plan.components.find(c=>c.id===prep.componentId),variant=component.variants.find(v=>v.id===prep.variantId),recipe=materializeVariant(component,variant);
+ assertPreparationReady(recipe);
+ const trial=makeTrialFromRecipe(recipe,'V'+(data.trials.filter(t=>t.recipeId===recipe.id).length+1));
+ trial.change=variant.changes;trial.batch.targetYield=cloneData(prep.targetYield);
+ trial.planContext={planId:plan.id,preparationId:prep.id,componentId:component.id,variantId:variant.id,planName:plan.name,preparationName:prep.name,referenceName:component.reference.name,changes:variant.changes};
+ return trial;
+}
+function commitTrial(trial){
+ const next=cloneData(db);next.trials.push(cloneData(trial));
+ if(trial.planContext){
+  const plan=plansOf(next).find(p=>p.id===trial.planContext.planId),prep=plan?.preparations.find(p=>p.id===trial.planContext.preparationId);
+  if(!plan||!prep)throw Error('Le plan lié à cet essai est introuvable.');assertPreparationEditable(plan,prep);prep.trialId=trial.id;plan.updatedAt=today();
+ }
+ return save(next);
+}
+function assertTrialDeletable(data,trialId){if(plansOf(data).some(p=>p.preparations.some(prep=>prep.trialId===trialId)))throw Error('Cet essai est utilisé par un plan de test et ne peut pas être supprimé. Archivez le plan pour conserver son historique.');}
+function assertTastingReady(data,plan,tasting){
+ if(!tasting.selections.some(s=>s.preparationId))throw Error('Choisissez au moins une préparation incluse.');
+ for(const selection of tasting.selections){
+  if(selection.preparationId){const prep=plan.preparations.find(p=>p.id===selection.preparationId);if(!prep?.trialId||!data.trials.some(t=>t.id===prep.trialId))throw Error('Enregistrez les essais des préparations utilisées avant de réaliser cette dégustation.');}
+ }
+}
+function duplicatePlan(original){
+ const plan=cloneData(original),map=new Map();const fresh=id=>{const value=uid();map.set(id,value);return value};
+ plan.id=uid();plan.name=original.name+' — copie';plan.status='active';plan.createdAt=plan.updatedAt=today();plan.conclusion='';
+ plan.criteria.forEach(c=>c.id=fresh(c.id));plan.components.forEach(c=>{c.id=fresh(c.id);c.variants.forEach(v=>v.id=fresh(v.id))});
+ plan.preparations.forEach(p=>{p.id=fresh(p.id);p.componentId=map.get(p.componentId);p.variantId=map.get(p.variantId);p.trialId=null});
+ plan.tastings.forEach(t=>{t.id=uid();t.selections=t.selections.map(s=>({componentId:map.get(s.componentId),variantId:map.get(s.variantId),preparationId:s.preparationId?map.get(s.preparationId):null}));t.status='planned';t.date='';t.observations='';t.verdict='pending';t.scores=Object.fromEntries(plan.criteria.map(c=>[c.id,null]))});
+ return plan;
+}
+function buildDessertPlan(data,{projectId,namelakaId,griottesId}){
+ const cream=data.recipes.find(r=>r.id===namelakaId),source=data.recipes.find(r=>r.id===griottesId);
+ if(!data.projects.some(p=>p.id===projectId)||!cream||!source||cream.id===source.id)throw Error('Choisissez le projet et deux recettes sources distinctes.');
+ const creamForm=cream.formulation||convertIngredients(cream),fruitForm=source.formulation||convertIngredients(source);
+ const chocolate=creamForm.ingredients.find(i=>/chocolat/i.test(i.name)&&i.quantity!==null),fruit=fruitForm.ingredients.find(i=>/griotte/i.test(i.name)&&i.quantity!==null),sugar=fruitForm.ingredients.find(i=>/sucre/i.test(i.name)&&i.quantity!==null);
+ if(!chocolate||!fruit||!sugar)throw Error('Les sources doivent préciser le chocolat, les griottes et le sucre avec leurs quantités. Complétez leurs ingrédients paramétriques.');
+ const fruitGrams=convertQuantity(fruit.quantity,fruit.unit,'g');
+ const berries={...cloneData(source),id:uid(),projectId,name:'Griottes tièdes — élément',goal:'Comparer l’acidité et le sucre des fruits.',createdAt:today(),sourceRecipeId:source.id,sourceIngredients:source.ingredients,formulation:{yield:{quantity:1,unit:'lot'},ingredients:[cloneData(fruit),{...cloneData(sugar),quantity:convertQuantity(fruitGrams*.1,'g',sugar.unit),note:'Variante de référence : sucre à 10 % du poids des fruits.'}]},steps:source.steps.filter(step=>!/(tuile|namelaka|étaler|cacao)/i.test(step))};
+ if(!berries.steps.length)berries.steps=['Compléter la préparation des griottes à partir de la source conservée.'];
+ berries.ingredients=berries.formulation.ingredients.map(i=>ingredientQuantity(i)+' — '+i.name).join('\n');
+ const tuile={...cloneData(source),id:uid(),projectId,name:'Tuile cacao — élément',goal:'Compléter la formule et comparer le croustillant du dressage.',createdAt:today(),sourceRecipeId:source.id,sourceIngredients:source.ingredients,formulation:{yield:{quantity:1,unit:'lot'},ingredients:[{id:uid(),name:'Pâte à tuile cacao',quantity:null,unit:'',note:'Formule exacte et quantité à préciser avant réalisation.'}]},steps:source.steps.filter(step=>/(tuile|étaler|cacao)/i.test(step))};
+ if(!tuile.steps.length)tuile.steps=['Compléter la formule et la méthode de réalisation de la tuile.'];tuile.ingredients='Pâte à tuile cacao : formule exacte et quantité à préciser.';
+ const plan=createPlan({projectId,name:'Dessert — namelaka, griottes et tuile',objective:'Comparer l’équilibre du dessert et identifier un assemblage à confirmer.',hypothesis:'Le chocolat, le sucre des fruits et le croustillant influencent ensemble l’équilibre.',conditions:'Conserver des portions, températures de service et temps de repos comparables.',criteria:['Texture','Amertume — équilibre','Acidité — équilibre','Croustillant','Équilibre global']});
+ plan.template='dessert';plan.sourceIds=[cream.id,source.id];
+ const creamRef={...cloneData(cream),formulation:cloneData(creamForm)},c=addPlanComponent(plan,creamRef,'Namelaka'),b=addPlanComponent(plan,berries,'Griottes'),t=addPlanComponent(plan,tuile,'Tuile cacao');
+ c.variants=[];for(const percent of [75,72]){const v=createVariant(c,'Chocolat '+percent+' %');v.changes='Utiliser du chocolat '+percent+' %, à quantité de chocolat identique.';v.ingredientEdits=[{ingredientId:chocolate.id,name:'Chocolat noir '+percent+' %'}];c.variants.push(v)}
+ b.variants=[];for(const percent of [10,15]){const v=createVariant(b,'Sucre '+percent+' %');v.changes='Sucre à '+percent+' % du poids des fruits.';v.ingredientEdits=[{ingredientId:sugar.id,quantity:convertQuantity(fruitGrams*percent/100,'g',sugar.unit),note:'Sucre à '+percent+' % du poids des fruits.'}];b.variants.push(v)}
+ t.variants=[createVariant(t,'Sans tuile',false),createVariant(t,'Avec tuile')];
+ const preparations=[addPreparation(plan,c.id,c.variants[0].id),addPreparation(plan,c.id,c.variants[1].id),addPreparation(plan,b.id,b.variants[0].id),addPreparation(plan,b.id,b.variants[1].id),addPreparation(plan,t.id,t.variants[1].id)];
+ [[0,0,0],[0,1,1],[1,0,1],[1,1,0]].forEach((row,index)=>addTasting(plan,'D'+(index+1),[
+  {componentId:c.id,variantId:c.variants[row[0]].id,preparationId:preparations[row[0]].id},
+  {componentId:b.id,variantId:b.variants[row[1]].id,preparationId:preparations[2+row[1]].id},
+  {componentId:t.id,variantId:t.variants[row[2]].id,preparationId:row[2]?preparations[4].id:null}
+ ]));
+ return {plan,recipes:[berries,tuile]};
+}
+function validateTestPlans(data){
+ const fail=message=>{throw Error('Plan de test invalide : '+message)},obj=x=>x&&typeof x==='object'&&!Array.isArray(x),id=x=>typeof x==='string'&&/^[A-Za-z0-9_-]{1,128}$/.test(x),str=(x,keys)=>keys.every(k=>typeof x[k]==='string'),date=(x,optional=false)=>typeof x==='string'&&((optional&&x==='')||(/^\d{4}-\d{2}-\d{2}$/.test(x)&&!Number.isNaN(Date.parse(x))));
+ const list=(xs,label)=>{if(!Array.isArray(xs))fail(label);const ids=new Set();for(const x of xs){if(!obj(x)||!id(x.id)||ids.has(x.id))fail(label+' : identifiants');ids.add(x.id)}return ids};
+ const plans=data.testPlans===undefined?[]:data.testPlans;list(plans,'plans');const usedTrials=new Set();
+ for(const plan of plans){
+  if(!data.projects.some(p=>p.id===plan.projectId)||!str(plan,['name','objective','hypothesis','conditions','conclusion'])||!plan.name.trim()||!['active','archived'].includes(plan.status)||!date(plan.createdAt)||!date(plan.updatedAt)||![null,'dessert'].includes(plan.template)||!Array.isArray(plan.sourceIds)||plan.sourceIds.some(source=>!data.recipes.some(r=>r.id===source)))fail('métadonnées');
+  const criteria=list(plan.criteria,'critères');if(!criteria.size||plan.criteria.some(c=>typeof c.name!=='string'||!c.name.trim()))fail('critères');
+  list(plan.components,'composants');list(plan.preparations,'préparations');list(plan.tastings,'dégustations');
+  for(const component of plan.components){
+   if(!str(component,['name','recipeId'])||!component.name.trim()||!data.recipes.some(r=>r.id===component.recipeId)||!obj(component.reference)||component.reference.id!==component.recipeId)fail('référence du composant');
+   validateData({schema:1,projects:data.projects,recipes:[component.reference],trials:[]});list(component.variants,'variantes');
+   for(const variant of component.variants){
+    if(!str(variant,['name','changes'])||!variant.name.trim()||typeof variant.included!=='boolean'||!Array.isArray(variant.ingredientEdits))fail('variante');
+    const edited=new Set();for(const edit of variant.ingredientEdits){if(!obj(edit)||!id(edit.ingredientId)||edited.has(edit.ingredientId)||!component.reference.formulation?.ingredients.some(i=>i.id===edit.ingredientId)||Object.keys(edit).some(k=>!['ingredientId','name','quantity','unit','note'].includes(k)))fail('adaptations');edited.add(edit.ingredientId)}
+    if(variant.included){const effective=materializeVariant(component,variant);validateData({schema:1,projects:data.projects,recipes:[effective],trials:[]});if(effective.formulation){if(!obj(variant.targetYield))fail('rendement variante');batchFactor(effective.formulation,variant.targetYield)}else if(variant.targetYield!==null)fail('rendement libre');}
+    else if(variant.targetYield!==null||variant.ingredientEdits.length)fail('variante absente');
+   }
+  }
+  for(const prep of plan.preparations){
+   const component=plan.components.find(c=>c.id===prep.componentId),variant=component?.variants.find(v=>v.id===prep.variantId);
+   if(!variant?.included||typeof prep.name!=='string'||!prep.name.trim())fail('préparation');
+   const effective=materializeVariant(component,variant);if(effective.formulation){if(!obj(prep.targetYield))fail('rendement préparation');batchFactor(effective.formulation,prep.targetYield)}else if(prep.targetYield!==null)fail('rendement libre');
+   if(prep.trialId!==null){const trial=data.trials.find(t=>t.id===prep.trialId);if(!trial||usedTrials.has(trial.id)||trial.recipeId!==component.recipeId||!obj(trial.planContext)||trial.planContext.planId!==plan.id||trial.planContext.preparationId!==prep.id||trial.planContext.componentId!==component.id||trial.planContext.variantId!==variant.id)fail('lien essai');usedTrials.add(trial.id)}
+  }
+  for(const tasting of plan.tastings){
+   if(!str(tasting,['name','date','observations','verdict'])||!tasting.name.trim()||!['planned','completed','skipped'].includes(tasting.status)||!['pending','validated','to_improve','rejected'].includes(tasting.verdict)||!date(tasting.date,true)||!obj(tasting.scores)||!Array.isArray(tasting.selections))fail('dégustation');
+   if(Object.keys(tasting.scores).length!==criteria.size||Object.keys(tasting.scores).some(k=>!criteria.has(k))||[...criteria].some(k=>tasting.scores[k]!==null&&!(typeof tasting.scores[k]==='number'&&Number.isFinite(tasting.scores[k])&&tasting.scores[k]>=0&&tasting.scores[k]<=10)))fail('notes');
+   const seen=new Set();for(const selection of tasting.selections){
+    if(!obj(selection)||seen.has(selection.componentId))fail('assemblage');seen.add(selection.componentId);
+    const component=plan.components.find(c=>c.id===selection.componentId),variant=component?.variants.find(v=>v.id===selection.variantId),prep=plan.preparations.find(p=>p.id===selection.preparationId);
+    if(!variant||(variant.included?(!prep||prep.componentId!==component.id||prep.variantId!==variant.id):selection.preparationId!==null))fail('assemblage');
+   }
+   if(tasting.status==='completed'){if(!date(tasting.date))fail('date réalisée');assertTastingReady(data,plan,tasting)}
+  }
+ }
+ for(const trial of data.trials)if(trial.planContext!==undefined){const c=trial.planContext;if(!obj(c)||!str(c,['planId','preparationId','componentId','variantId','planName','preparationName','referenceName','changes'])||!usedTrials.has(trial.id))fail('provenance essai')}
+ return data;
+}
+function planReport(plan,data){
+ const selectionText=t=>t.selections.map(s=>{const c=plan.components.find(c=>c.id===s.componentId),v=c.variants.find(v=>v.id===s.variantId),p=plan.preparations.find(p=>p.id===s.preparationId);return c.name+' : '+v.name+(p?' ['+p.name+']':'')}).join(' ; ');
+ return `# Plan : ${plan.name}\nÉtat : ${planStateLabel(plan.status)}\nObjectif : ${plan.objective}\nHypothèses : ${plan.hypothesis}\nConditions : ${plan.conditions}\n\n${plan.preparations.length} préparations distinctes ; ${plan.tastings.length} dégustations\n\n## Préparations\n`+plan.preparations.map(p=>{
+  const component=plan.components.find(c=>c.id===p.componentId),variant=component.variants.find(v=>v.id===p.variantId),recipe=materializeVariant(component,variant),trial=data.trials.find(t=>t.id===p.trialId);
+  return `### ${p.name} — ${trial?'Réalisé':'Prévu'}\n${variant.changes}\n`+(trial?report(trial):recipe.formulation?`Cible : ${formatQuantity(p.targetYield.quantity)} ${p.targetYield.unit}\n`+calculateBatch(recipe.formulation,{targetYield:p.targetYield,adjustments:{}}).ingredients.map(i=>'- '+ingredientQuantity(i)+' '+i.name).join('\n'):'Liste libre à compléter')+'\n';
+ }).join('\n')+'\n## Dégustations\n'+plan.tastings.map(t=>`### ${t.name} — ${planStateLabel(t.status)}\n${selectionText(t)}\nDate : ${t.date||'Non renseignée'}\n${plan.criteria.map(c=>c.name+' : '+(t.scores[c.id]===null?'Non évalué':t.scores[c.id]+'/10')).join('\n')}\nObservations : ${t.observations||'Non renseignées'}\nVerdict : ${t.verdict==='pending'?'À évaluer':verdictLabel(t.verdict)}\n`).join('\n')+'\n## Conclusion\n'+(plan.conclusion||'Non renseignée')+'\n';
+}
+
 const seedRecipes=[
 ['Sarrasin crémeux','Plat','Grains distincts, saveur noisette affirmée, bonne tenue après réchauffage.','120 g sarrasin décortiqué (25 g liaison, 95 g grains)\n350–450 ml bouillon végétal léger\n15 g échalote\n20 g beurre\n5 g huile',['Cuire les 25 g de grains jusqu’à très tendres, puis mixer avec leur bouillon.','Faire suer l’échalote et chauffer les 95 g de grains.','Ajouter le bouillon progressivement en relevant temps et volume.','Incorporer crème de liaison et beurre hors du feu.','Déguster une moitié, refroidir rapidement l’autre et réchauffer à J+1.'],'Temps de cuisson ; volume de bouillon ; texture immédiate et J+1 ; intensité noisette.','V1 sans torréfaction ; V2 15 % de grains torréfiés ; V3 fraction mixée ajustée.'],
 ['Namelaka chocolat 75 %','Dessert','Texture soyeuse, chocolat intense sans lourdeur, bonne tenue après 24 h.','75 g chocolat noir 75 %\n54 g lait entier\n102 g crème entière 35 %\n1,2 g gélatine 200 Bloom\n3 g glucose',['Hydrater la gélatine ; fondre le chocolat vers 45 °C.','Chauffer lait et glucose puis dissoudre la gélatine.','Verser le lait en trois fois sur le chocolat pour émulsionner.','Ajouter la crème froide et mixer sans incorporer d’air.','Réfrigérer 12–24 h et évaluer tenue, lissage et amertume.'],'Texture à 12 h et 24 h ; tenue quenelle ; amertume ; marque du chocolat.','V1 chocolat 75 % ; V2 70–72 % ; V3 réduire chocolat de 5 % si trop ferme.'],
@@ -272,6 +428,7 @@ function validateData(d){
   if(t.checked.some(v=>!Number.isInteger(v)||v<0||(t.snapshot&&v>=t.snapshot.steps.length)))fail();
  }
  validateExtensions(d);
+ validateTestPlans(d);
  return d;
 }
 let db,rawStorage=null,storageLocked=false,storageMessage='',needsInitialSave=false;
