@@ -43,7 +43,7 @@ Une recette peut porter :
 
 Le rendement est strictement positif. Les identifiants de lignes sont uniques dans
 la formulation. Une quantité `null` est qualitative ; les plages restent dans les
-notes. Masse : mg/g/kg ; volume : ml/cl/l ; autres unités : portion, pièce,
+notes. Masse : mg/g/kg ; volume : ml/cl/l ; autres unités : lot, portion, pièce,
 c. à café, c. à soupe, pincée. Aucune conversion entre familles ni densité implicite.
 Les nombres sont stockés sans arrondi d’affichage ; point et virgule sont acceptés
 par le formulaire. Les limites numériques non finies sont rejetées.
@@ -75,3 +75,26 @@ total confirmé. Aucune durée ni température n’est multipliée par le facteu
 Les exports JSON conservent intégralement ces champs. Les exports Markdown donnent
 les quantités effectives, les ajustements, les temps et le verdict français. Les
 imports valident les extensions quand elles sont présentes avant tout remplacement.
+
+
+### Conversion explicite des listes libres (0.2.1)
+
+Les nouvelles données de départ incluent des formulations revues à partir des
+listes originales, sans changer ces listes. Le rendement `1 lot` n’est pas une
+portion inventée : il désigne exactement le lot original. Un rendement explicite
+est utilisé lorsque les étapes précisent 6 pièces.
+
+Pour les données déjà présentes, `proposeConversion` travaille sur une copie,
+préserve intégralement les recettes structurées, les champs existants et les essais,
+et valide le résultat. La vue d’aperçu ne sauvegarde rien. L’application est un clic
+explicite qui exporte d’abord le JSON actuel puis passe par le stockage protégé.
+En cas d’échec, l’aperçu reste ouvert ; aucun faux succès n’est affiché.
+
+Les recettes de départ identifiées par nom, liste et étapes originales ont une
+conversion détaillée (sarrasin séparé en 25 g de liaison et 95 g de grains, marinade
+et panure décomposées). Pour les autres listes, seules les expressions simples
+quantité + unité massique/volumique sont interprétées ; les expressions composées
+restent en texte intégral. Les plages gardent leur borne basse chiffrée et leur
+fourchette de référence en note. Les lignes non chiffrées ne sont pas arbitrairement
+étiquetées « au goût » : elles sont affichées « Quantité à préciser », sauf indication
+explicite « au goût ».

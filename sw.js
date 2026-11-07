@@ -1,5 +1,5 @@
 // Bump for changes to the offline shell. localStorage's independent key is unchanged.
-const CACHE='atelier-saveurs-v4';
+const CACHE='atelier-saveurs-v5';
 const ASSETS=['./','./index.html','./manifest.webmanifest','./icon.svg'];
 self.addEventListener('install',e=>{e.waitUntil((async()=>{const c=await caches.open(CACHE);await c.addAll(ASSETS);await self.skipWaiting()})())});
 self.addEventListener('activate',e=>{e.waitUntil((async()=>{const keys=await caches.keys();await Promise.all(keys.filter(k=>k.startsWith('atelier-saveurs-')&&k!==CACHE).map(k=>caches.delete(k)));await self.clients.claim()})())});
