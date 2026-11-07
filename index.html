@@ -338,6 +338,7 @@ function validateTestPlans(data){
    }
    if(tasting.status==='completed'){if(!date(tasting.date))fail('date réalisée');assertTastingReady(data,plan,tasting)}
   }
+  if(plan.optimization!==undefined)validateOptimizationSettings(plan,plan.optimization,true);
  }
  for(const trial of data.trials)if(trial.planContext!==undefined){const c=trial.planContext;if(!obj(c)||!str(c,['planId','preparationId','componentId','variantId','planName','preparationName','referenceName','changes'])||!usedTrials.has(trial.id))fail('provenance essai')}
  return data;
@@ -525,6 +526,147 @@ function handlePlanAction(verb,id){
  else if(verb==='archivePlan')savePlanMutation(p=>p.status='archived');
  else return false;
  return true;
+}
+
+const OPTIMIZER_LIMIT=4096;
+const optimizationVariantKey=(componentId,variantId)=>JSON.stringify([componentId,variantId]);
+function optimizationDefaults(plan){
+ if(plan.optimization)return cloneData(plan.optimization);
+ const factors=plan.components.map(c=>({componentId:c.id,variantIds:c.variants.map(v=>v.id)}));
+ const lots=plan.components.flatMap(c=>c.variants.filter(v=>v.included).map(v=>{const candidates=plan.preparations.filter(p=>p.componentId===c.id&&p.variantId===v.id);return {componentId:c.id,variantId:v.id,preparationId:candidates.length===1?candidates[0].id:candidates.length?'':'new'}}));
+ return {mode:'pairs',operation:'complete',factors,exclusions:[],lots,pinnedTastingIds:[]};
+}
+function validateOptimizationSettings(plan,settings,requireLots=true){
+ const fail=message=>{throw Error('Réglages d’optimisation : '+message+' Corrigez les réglages ou réinitialisez-les depuis le plan.')};
+ const object=x=>x&&typeof x==='object'&&!Array.isArray(x);
+ if(!object(settings)||!['pairs','full'].includes(settings.mode)||!['complete','rearrange'].includes(settings.operation)||!Array.isArray(settings.factors)||settings.factors.length<1||settings.factors.length>12||!Array.isArray(settings.exclusions)||settings.exclusions.length>128||!Array.isArray(settings.lots)||!Array.isArray(settings.pinnedTastingIds))fail('mode, opération ou limites invalides (12 composants, 128 exclusions)');
+ const components=new Set(),selected=new Set(),included=new Set();
+ for(const factor of settings.factors){
+  const c=object(factor)&&plan.components.find(c=>c.id===factor.componentId);
+  if(!c||components.has(c.id)||!Array.isArray(factor.variantIds)||!factor.variantIds.length||new Set(factor.variantIds).size!==factor.variantIds.length)fail('choisissez au moins une variante par composant distinct');
+  components.add(c.id);for(const id of factor.variantIds){const v=c.variants.find(v=>v.id===id);if(!v)fail('variante introuvable');const key=optimizationVariantKey(c.id,id);selected.add(key);if(v.included)included.add(key)}
+ }
+ for(const rule of settings.exclusions){
+  if(!Array.isArray(rule)||rule.length<2)fail('une exclusion doit choisir au moins deux composants');
+  const seen=new Set();for(const item of rule){if(!object(item)||seen.has(item.componentId)||!selected.has(optimizationVariantKey(item.componentId,item.variantId)))fail('exclusion incompatible avec les variantes retenues');seen.add(item.componentId)}
+ }
+ const bound=new Set();for(const binding of settings.lots){
+  if(!object(binding))fail('lot incorrect');const key=optimizationVariantKey(binding.componentId,binding.variantId);
+  if(!included.has(key)||bound.has(key))fail('lot ne correspondant pas à une variante incluse');bound.add(key);
+  if(binding.preparationId===''&&!requireLots)continue;
+  if(binding.preparationId!=='new'&&!plan.preparations.some(p=>p.id===binding.preparationId&&p.componentId===binding.componentId&&p.variantId===binding.variantId))fail('choisissez explicitement un lot pour chaque variante incluse');
+ }
+ if(bound.size!==included.size)fail('choisissez un lot pour chaque variante incluse');
+ if(new Set(settings.pinnedTastingIds).size!==settings.pinnedTastingIds.length||settings.pinnedTastingIds.some(id=>!plan.tastings.some(t=>t.id===id)))fail('dégustation épinglée introuvable');
+ return settings;
+}
+function optimizationRowKey(selections){return JSON.stringify(selections.map(s=>[s.componentId,s.variantId]))}
+function optimizationRowTargets(selections,kind){
+ if(kind==='combinaisons')return [optimizationRowKey(selections)];
+ if(kind==='variantes')return selections.map(s=>optimizationVariantKey(s.componentId,s.variantId));
+ const targets=[];for(let i=0;i<selections.length;i++)for(let j=i+1;j<selections.length;j++)targets.push(JSON.stringify([selections[i].componentId,selections[i].variantId,selections[j].componentId,selections[j].variantId]));return targets;
+}
+function buildOptimizationUniverse(plan,settings){
+ validateOptimizationSettings(plan,settings,false);
+ const rawCount=settings.factors.reduce((n,f)=>n*f.variantIds.length,1);if(rawCount>OPTIMIZER_LIMIT)throw Error('Plus de 4 096 combinaisons brutes : réduisez les composants ou variantes retenus. Aucun échantillonnage n’est appliqué.');
+ const kind=settings.mode==='full'?'combinaisons':settings.factors.length===1?'variantes':'paires',candidates=[],targetGroups=new Map(),targetSet=new Set();
+ function visit(selections){
+  if(selections.length<settings.factors.length){const f=settings.factors[selections.length];for(const variantId of f.variantIds)visit([...selections,{componentId:f.componentId,variantId}]);return}
+  if(!selections.some(s=>plan.components.find(c=>c.id===s.componentId).variants.find(v=>v.id===s.variantId).included))return;
+  if(settings.exclusions.some(rule=>rule.every(item=>selections.some(s=>s.componentId===item.componentId&&s.variantId===item.variantId))))return;
+  const targets=optimizationRowTargets(selections,kind);
+  for(const key of targets){targetSet.add(key);const parts=JSON.parse(key);targetGroups.set(key,kind==='paires'?JSON.stringify([parts[0],parts[2]]):kind==='variantes'?parts[0]:key)}
+  candidates.push({selections,key:optimizationRowKey(selections),targets});
+ }
+ visit([]);
+ const reachable=new Set(candidates.flatMap(c=>c.selections.map(s=>optimizationVariantKey(s.componentId,s.variantId))));
+ const unreachable=settings.factors.flatMap(f=>f.variantIds.filter(id=>!reachable.has(optimizationVariantKey(f.componentId,id))).map(variantId=>({componentId:f.componentId,variantId})));
+ return {settings:cloneData(settings),rawCount,candidates,targets:[...targetSet],targetGroups,kind,unreachable};
+}
+function tastingOptimizationCoverage(tasting,universe){
+ const projected=universe.settings.factors.flatMap(f=>{const selection=tasting.selections.find(s=>s.componentId===f.componentId);return selection?[{componentId:selection.componentId,variantId:selection.variantId}]:[]});
+ const compatible=projected.length>0&&universe.candidates.some(c=>projected.every(s=>c.selections.some(x=>x.componentId===s.componentId&&x.variantId===s.variantId)));
+ if(!compatible)return {compatible:false,targets:[]};
+ if(universe.kind==='combinaisons'&&projected.length!==universe.settings.factors.length)return {compatible:true,targets:[]};
+ const targets=optimizationRowTargets(projected,universe.kind),valid=new Set(universe.targets);
+ return {compatible:true,targets:targets.filter(key=>valid.has(key))};
+}
+function optimizationCoverage(plan,universe,rows=plan.tastings){
+ const predicted=new Set(),realized=new Set(),conflictIds=[];
+ for(const row of rows){const cover=tastingOptimizationCoverage(row,universe);if(!cover.compatible)conflictIds.push(row.id);if(row.status==='skipped')continue;for(const key of cover.targets){if(row.status==='planned'||row.status==='completed')predicted.add(key);if(row.status==='completed')realized.add(key)}}
+ return {predicted:predicted.size,realized:realized.size,total:universe.targets.length,conflictIds};
+}
+function isPristineTasting(tasting){return tasting.status==='planned'&&tasting.date.trim()===''&&tasting.observations.trim()===''&&tasting.verdict==='pending'&&Object.values(tasting.scores).every(value=>value===null)}
+function optimizerKeptRows(plan,settings){return plan.tastings.filter(t=>settings.operation==='complete'||!isPristineTasting(t)||settings.pinnedTastingIds.includes(t.id))}
+function* solveOptimization(plan,settings,{maxNodes=50000,maxMs=1200}={}){
+ validateOptimizationSettings(plan,settings,true);const universe=buildOptimizationUniverse(plan,settings);if(!universe.candidates.length)throw Error('Aucun assemblage réalisable avec ces variantes et exclusions.');
+ const kept=optimizerKeptRows(plan,settings),keptIds=kept.map(t=>t.id),removedIds=plan.tastings.filter(t=>!keptIds.includes(t.id)).map(t=>t.id),covered=new Set();
+ for(const tasting of kept)if(tasting.status!=='skipped')for(const key of tastingOptimizationCoverage(tasting,universe).targets)covered.add(key);
+ const missing=universe.targets.filter(key=>!covered.has(key)),goal=new Set(missing);
+ const groupBound=targets=>{const groups=new Map();for(const key of targets){const group=universe.targetGroups.get(key);groups.set(group,(groups.get(group)||0)+1)}return groups.size?Math.max(...groups.values()):0};
+ const lowerBound=groupBound(goal);let best=[],nodes=0,interrupted=false,proven=false,method='bound';
+ yield {stage:'Univers réalisable calculé',candidates:universe.candidates.length};
+ if(settings.mode==='full'){best=universe.candidates.map((row,i)=>goal.has(row.key)?i:-1).filter(i=>i>=0);proven=true;method='exhaustive'}
+ else if(!missing.length)proven=true;
+ else{
+  const indices=universe.candidates.map((_,i)=>i),newBindings=new Set(settings.lots.filter(l=>l.preparationId==='new').map(l=>optimizationVariantKey(l.componentId,l.variantId)));
+  const newKeys=index=>universe.candidates[index].selections.map(s=>optimizationVariantKey(s.componentId,s.variantId)).filter(key=>newBindings.has(key));
+  const cost=chosen=>new Set(chosen.flatMap(newKeys)).size;
+  best=null;
+  const starts=universe.candidates.length<=64?8:4;
+  for(let start=0;start<starts;start++){
+   const left=new Set(missing),chosen=[],newUsed=new Set();
+   while(left.size){
+    let winner=-1,gain=0,extra=Infinity,rank=Infinity;
+    for(const i of indices){const amount=universe.candidates[i].targets.reduce((n,t)=>n+(left.has(t)?1:0),0),additional=newKeys(i).filter(key=>!newUsed.has(key)).length,order=(i-start+indices.length)%indices.length;if(amount>gain||(amount===gain&&amount>0&&(additional<extra||(additional===extra&&order<rank)))){winner=i;gain=amount;extra=additional;rank=order}}
+    if(winner<0)throw Error('Couverture complète impossible à établir.');chosen.push(winner);for(const key of universe.candidates[winner].targets)left.delete(key);newKeys(winner).forEach(key=>newUsed.add(key));
+    yield {stage:'Recherche d’une sélection couvrante',remaining:left.size};
+   }
+   for(let k=chosen.length-1;k>=0;k--){const others=new Set(chosen.filter((_,j)=>j!==k).flatMap(i=>universe.candidates[i].targets));if(missing.every(key=>others.has(key)))chosen.splice(k,1)}
+   if(best===null||chosen.length<best.length||(chosen.length===best.length&&cost(chosen)<cost(best)))best=chosen;
+   if(best.length===lowerBound){proven=true;break}
+  }
+  if(!proven&&universe.candidates.length<=64&&missing.length<=256){
+   method='exact';const bit=new Map(missing.map((key,index)=>[key,1n<<BigInt(index)])),masks=universe.candidates.map(c=>c.targets.reduce((mask,key)=>mask|(bit.get(key)||0n),0n)),all=(1n<<BigInt(missing.length))-1n,memo=new Map(),start=Date.now();
+   const byTarget=missing.map(key=>({key,mask:bit.get(key),choices:indices.filter(i=>(masks[i]&bit.get(key))!==0n)})).sort((a,b)=>a.choices.length-b.choices.length);
+   function* search(remaining,chosen){
+    if(nodes>=maxNodes||Date.now()-start>=maxMs){interrupted=true;return}nodes++;if(nodes%128===0)yield {stage:'Recherche d’un minimum',nodes};
+    if(remaining===0n){if(chosen.length<best.length)best=[...chosen];return}
+    const left=missing.filter(key=>(remaining&bit.get(key))!==0n);if(chosen.length+groupBound(left)>=best.length)return;
+    const key=remaining.toString(16);if((memo.get(key)??Infinity)<=chosen.length)return;memo.set(key,chosen.length);
+    const pivot=byTarget.find(target=>(remaining&target.mask)!==0n);
+    const choices=[...pivot.choices].sort((a,b)=>newKeys(a).length-newKeys(b).length||a-b);
+    for(const i of choices){yield* search(remaining&~masks[i],[...chosen,i]);if(interrupted||best.length===lowerBound)return}
+   }
+   yield* search(all,[]);proven=!interrupted||best.length===lowerBound;
+  }
+  if(!proven)method='heuristic';
+ }
+ const rows=best.map(i=>cloneData(universe.candidates[i].selections)),virtual=rows.map((selections,i)=>({id:'proposed-'+i,status:'planned',selections})),after=optimizationCoverage(plan,universe,[...kept,...virtual]);
+ if(after.predicted!==after.total)throw Error('La proposition ne couvre pas toutes les cibles : aucune application possible.');
+ return {rows,keptIds,removedIds,before:optimizationCoverage(plan,universe),after,proof:{proven,method,lowerBound,nodes,interrupted},rawCount:universe.rawCount,feasibleCount:universe.candidates.length,kind:universe.kind,unreachable:universe.unreachable};
+}
+function optimizePlan(plan,settings,limits){const generator=solveOptimization(plan,settings,limits);let result;do{result=generator.next()}while(!result.done);return result.value}
+function buildOptimizationProposal(plan,settings,result){
+ const draft=cloneData(plan),bindings=new Map(),newPreparations=[];
+ for(const selections of result.rows)for(const selection of selections){
+  const component=plan.components.find(c=>c.id===selection.componentId),variant=component.variants.find(v=>v.id===selection.variantId);if(!variant.included)continue;
+  const key=optimizationVariantKey(component.id,variant.id);if(bindings.has(key))continue;
+  const binding=settings.lots.find(l=>l.componentId===component.id&&l.variantId===variant.id);
+  if(binding.preparationId==='new'){const prep=addPreparation(draft,component.id,variant.id);newPreparations.push(prep);bindings.set(key,prep.id)}else bindings.set(key,binding.preparationId);
+ }
+ const generatedRows=result.rows.map((selections,index)=>addTasting(draft,'Optimisation '+(index+1),selections.map(selection=>{const c=plan.components.find(c=>c.id===selection.componentId),v=c.variants.find(v=>v.id===selection.variantId);return {...selection,preparationId:v.included?bindings.get(optimizationVariantKey(c.id,v.id)):null}})));
+ const resolved=cloneData(settings);for(const binding of resolved.lots){const id=bindings.get(optimizationVariantKey(binding.componentId,binding.variantId));if(id)binding.preparationId=id}
+ return {planId:plan.id,baseline:JSON.stringify(plan),settings:resolved,keptIds:[...result.keptIds],removedIds:[...result.removedIds],generatedRows,newPreparations,result:cloneData(result)};
+}
+function applyOptimizationProposal(data,proposal){
+ const current=plansOf(data).find(p=>p.id===proposal.planId);if(!current)throw Error('Plan introuvable.');if(current.status==='archived')throw Error('Ce plan est archivé ; dupliquez-le avant application.');
+ if(JSON.stringify(current)!==proposal.baseline)throw Error('Le plan a changé : cet aperçu est périmé. Relancez le calcul.');
+ const next=cloneData(data),plan=plansOf(next).find(p=>p.id===current.id),kept=new Set(proposal.keptIds);
+ const expected=optimizerKeptRows(current,proposal.settings).map(t=>t.id);if(JSON.stringify(expected)!==JSON.stringify(proposal.keptIds))throw Error('Les lignes protégées ont changé. Relancez le calcul.');
+ plan.preparations.push(...cloneData(proposal.newPreparations));plan.tastings=[...plan.tastings.filter(t=>kept.has(t.id)),...cloneData(proposal.generatedRows)];plan.optimization=cloneData(proposal.settings);plan.updatedAt=today();
+ validateData(next);const universe=buildOptimizationUniverse(plan,plan.optimization),coverage=optimizationCoverage(plan,universe);if(!universe.candidates.length||coverage.predicted!==coverage.total)throw Error('Couverture insuffisante : relancez le calcul.');
+ return next;
 }
 
 const seedRecipes=[
