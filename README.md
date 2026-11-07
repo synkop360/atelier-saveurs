@@ -3,7 +3,7 @@
 
 Carnet culinaire généraliste, utilisable sur mobile et ordinateur, pour documenter les recettes et améliorer les préparations au fil d'essais comparables.
 
-**Version :** 0.3 — plans de test, préparations partagées et dégustations comparées. Le projet « Noël 2026 » et sept fiches d'essais sont inclus.
+**Version :** 0.3.1 — quantités des lots et ingrédients modifiables directement dans les plans. Le projet « Noël 2026 » et sept fiches d'essais sont inclus.
 
 ## Fonctionnalités
 
@@ -156,8 +156,8 @@ variante ou dans une référence explicitement actualisée.
 - **Comparer** affiche les critères et observations sans moyenne imposée. Le tableau
   peut défiler horizontalement. Amertume et acidité sont notées selon l’équilibre
   souhaité, pas l’intensité brute.
-- Un nouveau lot de variante repart des paramètres de cette variante ; les
-  ajustements manuels d’un essai précédent ne sont pas recopiés implicitement.
+- Un nouveau lot copie la quantité cible et les ajustements enregistrés du lot
+  choisi (ou de son essai réel pour les anciens lots), sans modifier l’historique.
 - Une nouvelle dégustation similaire réutilise ses lots sélectionnés ; choisir de
   nouveaux lots pour une confirmation indépendante.
 - Les éléments utilisés sont protégés. Un essai lié ne peut pas être supprimé.
@@ -167,3 +167,22 @@ variante ou dans une référence explicitement actualisée.
 Les plans sont inclus dans le JSON global et le Markdown. Chaque plan peut aussi
 être exporté seul en Markdown. Les anciens fichiers restent importables ; aucun
 plan n’est ajouté au chargement des données existantes.
+
+
+### Modifier les quantités dans un plan
+
+Dans **Lots à préparer → Modifier les quantités**, changer le rendement cible
+pour recalculer les ingrédients, puis saisir les quantités effectives voulues
+pour chaque ingrédient. Les quantités calculées et les ajustements manuels sont
+identifiés, et le recalcul est visible avant de démarrer l’essai.
+
+Un ajustement manuel reste fixe si le rendement change. **Revenir au calcul** le
+retire et rétablit la quantité proportionnelle. Enregistrer le lot conserve les
+choix pour l’essai, les exports et le prochain chargement ; annuler ne change rien.
+Les quantités effectivement enregistrées dans l’essai sont ensuite conservées
+avec le lot réalisé. Pour modifier un lot déjà cuisiné, créer un **Nouveau lot de
+cette variante** : les réglages réels sont copiés sans réécrire l’ancien essai.
+
+Les unités des ingrédients restent celles de la variante. Modifier cette unité
+convertit les ajustements existants entre unités compatibles ; une conversion
+incompatible est refusée. Les durées ne sont pas multipliées par le rendement.
