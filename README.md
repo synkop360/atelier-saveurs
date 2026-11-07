@@ -3,7 +3,7 @@
 
 Carnet culinaire généraliste, utilisable sur mobile et ordinateur, pour documenter les recettes et améliorer les préparations au fil d'essais comparables.
 
-**Version :** 0.3.1 — quantités des lots et ingrédients modifiables directement dans les plans. Le projet « Noël 2026 » et sept fiches d'essais sont inclus.
+**Version :** 0.4 — optimisation des combinaisons des plans de test. Le projet « Noël 2026 » et sept fiches d'essais sont inclus.
 
 ## Fonctionnalités
 
@@ -186,3 +186,27 @@ cette variante** : les réglages réels sont copiés sans réécrire l’ancien 
 Les unités des ingrédients restent celles de la variante. Modifier cette unité
 convertit les ajustements existants entre unités compatibles ; une conversion
 incompatible est refusée. Les durées ne sont pas multipliées par le rendement.
+
+
+## Optimiser les dégustations
+
+Ouvrir un plan puis **Optimiser les combinaisons**. Sélectionner composants,
+variantes, exclusions et lots à utiliser. Le mode **Par paires** couvre chaque paire
+réalisable ; **Toutes les combinaisons** couvre tous les assemblages autorisés.
+Pour le dessert à trois composants et deux variantes chacun : 8 assemblages
+possibles, 12 paires et 4 dégustations suffisent à couvrir ces paires.
+
+**Compléter** conserve toutes les lignes ; **Réagencer** peut remplacer seulement
+les lignes prévues vierges non épinglées. Les lignes réalisées, non réalisées,
+datées ou évaluées restent protégées. Vérifier l’aperçu puis appliquer : une
+sauvegarde JSON est téléchargée avant tout remplacement. Annuler ne sauvegarde rien.
+Les quantités des lots restent inchangées ; plusieurs lots pour une variante
+nécessitent un choix explicite. Les nouveaux lots ne sont créés qu’à l’application.
+
+La couverture prévue et la couverture réellement réalisée sont distinctes et
+recalculées sur le plan courant. « Minimum prouvé » n’apparaît que si le calcul
+l’établit pour les contraintes et les lignes conservées ; sinon le minimum n’est
+pas garanti. La couverture par paires ne vérifie pas toutes les interactions à trois
+éléments. Limites : 12 composants, 128 exclusions et 4 096 combinaisons brutes ;
+recherche exacte bornée en taille et temps. Coûts et organisation de cuisine restent
+à développer. Tous les calculs et résultats restent locaux.

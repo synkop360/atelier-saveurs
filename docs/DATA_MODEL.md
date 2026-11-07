@@ -163,3 +163,28 @@ incompatible ou un ingrédient ajusté disparu bloque toute la transaction ; auc
 changement partiel n’est enregistré. Les ajustements restent fixes lors du simple
 changement de rendement. Les exports de lots prévus utilisent les quantités
 effectives et signalent les ajustements manuels, comme les essais réalisés.
+
+
+### Réglages d’optimisation (0.4)
+
+`plan.optimization` est facultatif. Son absence ne provoque aucune écriture.
+Il contient `mode` (`pairs`/`full`), `operation` (`complete`/`rearrange`),
+`factors` (componentId, variantIds), `exclusions` (listes de choix componentId,
+variantId), `lots` (componentId, variantId, preparationId ou `new`) et
+`pinnedTastingIds`. Les références sont validées à l’import et remappées lors
+de la duplication. Réinitialiser explicitement ces réglages permet de retirer une
+référence utilisée, sans supprimer de lot ni de résultat.
+
+Les univers, couvertures, solutions et preuves sont dérivés et non persistés.
+Une absence explicite est une variante, distincte d’un composant non testé.
+Les paires ne sont des cibles que si elles peuvent s’étendre à un assemblage
+complet réalisable ; les lignes non réalisées ne contribuent pas à la couverture.
+Une ligne partielle ne couvre que ses choix explicites. Les exclusions ne réécrivent
+pas l’historique incompatible : ces lignes sont signalées hors univers.
+
+L’aperçu porte une copie du plan initial. L’application refuse un plan archivé ou
+modifié depuis le calcul, valide une copie complète de la base puis effectue une
+seule écriture. Les nouveaux lots sont créés une fois par variante utilisée ;
+aucune quantité existante n’est modifiée. Le remplacement de lignes vierges
+commence par le téléchargement d’une sauvegarde. Toute date, observation, note,
+verdict renseigné ou état autre que prévu protège la ligne.
