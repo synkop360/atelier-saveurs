@@ -60,7 +60,7 @@ Fichiers : `index.html`, `sw.js`, `tests/sw.test.cjs`, documentation existante.
   retour au calcul, persistance, temps, ancien JSON et JSON enrichi ; captures hors Git.
 - [x] Rejouer ACCEPTANCE et tests SW ; incrémenter cache sans changer la clé des données.
 - [x] Faire une revue indépendante de la branche et corriger les problèmes importants.
-- [ ] Mettre à jour données/documentation/bilan, pousser une PR puis intégrer et
+- [x] Mettre à jour données/documentation/bilan, pousser une PR puis intégrer et
   publier conformément à la demande validée ; vérifier URL et assets publics.
 
 ## Journal
@@ -73,6 +73,11 @@ Fichiers : `index.html`, `sw.js`, `tests/sw.test.cjs`, documentation existante.
 - Vérification finale : `86af88a` corrige le reset d’une saisie invalide et les
   ajustements chiffrés sans unité ; tests RED→GREEN, suite 25/25.
 - Revue indépendante complète sur `86af88a` : aucun problème important restant.
-- Parcours Chromium locaux et mise à jour PWA v3→v4 réussis ; publication à vérifier.
+- Parcours Chromium locaux et mise à jour PWA v3→v4 réussis ; publication vérifiée.
 - Choix techniques conformes à la conception : extensions optionnelles schema 1,
   aucune migration ni conversion automatique ; masse/volume non interchangeables.
+
+- Livraison : PR n°1 intégrée dans `bed676e`, Pages terminé avec succès ; HTTP 200
+  et contenus des quatre assets vérifiés. Parcours enrichi public entièrement réussi.
+- Limites : aucun test Android physique ni reconnaissance audio ; pas de plan de
+  test culinaire, d’optimiseur ou de coûts implémenté : réflexion dans ROADMAP.md.

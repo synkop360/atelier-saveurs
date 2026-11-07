@@ -107,3 +107,12 @@ Les anciennes listes d’ingrédients ne sont pas transformées automatiquement.
 Pour bénéficier des quantités, ouvrir la recette, activer la saisie structurée,
 saisir son rendement et ses lignes puis enregistrer. Les recettes de Noël restent
 inchangées tant que l’utilisateur ne les modifie pas.
+
+
+Publication 0.2 confirmée : [PR n°1](https://github.com/synkop360/atelier-saveurs/pull/1)
+intégrée dans `bed676e`, déploiement Pages réussi. Les quatre fichiers applicatifs
+(index, manifest, SW et icône) répondent HTTP 200 et sont identiques aux fichiers
+du commit livré. Le parcours Chromium enrichi complet a ensuite réussi sur
+https://synkop360.github.io/atelier-saveurs/ : création structurée, ajustements,
+durées, instantanés, ancien/nouveau JSON, Markdown, dispositions aux quatre largeurs,
+absence d’erreurs JS/assets et rechargement hors ligne avec les données conservées.
